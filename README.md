@@ -18,7 +18,7 @@ You can install the other requirements with:
     pip install -r requirements.txt
 ```
 
-## Example
+## Examples
 
 With fruits.txt :
 
@@ -82,7 +82,7 @@ With fruits.txt :
 <p>1000 rows × 2 columns</p>
 </div>
 
-You can generate a sankey's diagram with this code:
+You can generate a sankey's diagram with this code (`colorDict` is optional):
 
 ```python
 import pandas as pd
@@ -106,13 +106,14 @@ ax = sankey(
     rightLabels=['orange','banana','blueberry','apple','lime','kiwi'],
     fontsize=12
 )
+
 plt.show() # to display
 plt.savefig('fruit.png', bbox_inches='tight') # to save
 ```
 
 ![Fruity Alchemy](pysankey/fruit.png)
 
-You could also use weight:
+With customer-goods.csv :
 
 ```
 ,customer,good,revenue
@@ -128,6 +129,8 @@ You could also use weight:
 9,John,meat,13.0
 ```
 
+You could also weight:
+
 ```python
 import pandas as pd
 from pysankey import sankey
@@ -142,13 +145,15 @@ ax = sankey(
       left=df['customer'].values[1:], right=df['good'].values[1:],
       rightWeight=weight, leftWeight=weight, aspect=20, fontsize=20
 )
+
 plt.show() # to display
 plt.savefig('customers-goods.png', bbox_inches='tight') # to save
 ```
 
 ![Customer goods](pysankey/customers-goods.png)
 
-Similar to seaborn, you can pass a matplotlib `Axes` to `sankey` function:
+Similar to seaborn, you can pass a matplotlib `Axes` to `sankey` function with the keyword `ax=`:
+
 ```python
 import pandas as pd
 from pysankey import sankey
@@ -168,7 +173,7 @@ colorDict = {
 
 ax1 = plt.axes()
 
-sankey(
+ax1 = sankey(
       df['true'], df['predicted'], aspect=20, colorDict=colorDict,
       fontsize=12, ax=ax1
 )
@@ -178,24 +183,29 @@ plt.show()
 
 ## Important informations
 
-Use of `figureName`, `closePlot`, `figSize` in `sankey()` is deprecated and will be remove in a future version.
-This is done so matplotlib is used more transparently as this [issue](https://github.com/anazalea/pySankey/issues/26#issue-429312025) on the original github repo suggested.
+Use of `figureName`, `closePlot` and `figSize` in `sankey()` has been removed.
+This is done so matplotlib is used more transparently as this [issue] suggested (https://github.com/anazalea/pySankey/issues/26#issue-429312025) on the original github repo.
 
-Now, `sankey` does less of the customization and let the user do it to their liking by returning a matplotlib `Axes` object, which mean the user also has access to the `Figure` to customise.
+Now, `sankey()` does less of the customization and let the user do it to their liking by returning a matplotlib `Axes` object, which mean the user also has access to the `Figure` to customise.
 Then they can choose what to do with it - showing it, saving it with much more flexibility.
 
-### Recommended changes to your code
- - To save a figure, one can simply do:
+### Recommended changes to your code from pySankey
+ - To save a figure, after `sankey()`, one can simply do:
   ```python
     plt.savefig("<figureName>.png", bbox_inches="tight", dpi=150)
   ```
 
- - The `closePlot` is not needed anymore because without `plt.show()` after `sankey()`, no plot is displayed.
-  You can still do `plt.close()` to be sure to not display this plot if you display other plots afterwards.
+ - To display the diagram, simply do `plt.show()` after `sankey()`.
 
 - You can modify the sankey size by changing the one from the matplotlib figure.
   ```python
     plt.gcf().set_size_inches(figSize)
+  ```
+
+- It is possible to modify the diagram font looks, for example, add the following lines before calling `sankey()` :
+  ```python
+    plt.rc("text", usetex=False)
+    plt.rc("font", family="serif")
   ```
 
 ## Package development
