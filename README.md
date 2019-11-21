@@ -1,7 +1,9 @@
 # pySankey2
 
 Uses matplotlib to create simple <a href="https://en.wikipedia.org/wiki/Sankey_diagram">
-Sankey diagrams</a> flowing only from left to right.
+Sankey diagrams</a> flowing from left to right.
+
+A fork of a fork of [pySankey](https://github.com/anazalea/pySankey).
 
 [![PyPI version](https://badge.fury.io/py/pySankey2.svg)](https://badge.fury.io/py/pySankey2)
 [![Build Status](https://travis-ci.org/vgalisson/pySankey.svg?branch=master)](https://travis-ci.org/vgalisson/pySankey)
@@ -86,10 +88,12 @@ You can generate a sankey's diagram with this code (`colorDict` is optional):
 
 ```python
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from pysankey import sankey
 
 df = pd.read_csv(
-    'pysankey/fruits.txt', sep=' ', names=['true', 'predicted']
+    'pysankey/tests/fruits.txt', sep=' ', names=['true', 'predicted']
 )
 colorDict = {
     'apple':'#f71b1b',
@@ -111,7 +115,7 @@ plt.show() # to display
 plt.savefig('fruit.png', bbox_inches='tight') # to save
 ```
 
-![Fruity Alchemy](pysankey/fruit.png)
+![Fruity Alchemy](examples/fruit.png)
 
 With customer-goods.csv :
 
@@ -133,10 +137,12 @@ You could also weight:
 
 ```python
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from pysankey import sankey
 
 df = pd.read_csv(
-    'pysankey/customers-goods.csv', sep=',',
+    'pysankey/tests/customers-goods.csv', sep=',',
     names=['id', 'customer', 'good', 'revenue']
 )
 weight = df['revenue'].values[1:].astype(float)
@@ -150,17 +156,18 @@ plt.show() # to display
 plt.savefig('customers-goods.png', bbox_inches='tight') # to save
 ```
 
-![Customer goods](pysankey/customers-goods.png)
+![Customer goods](examples/customers-goods.png)
 
 Similar to seaborn, you can pass a matplotlib `Axes` to `sankey` function with the keyword `ax=`:
 
 ```python
 import pandas as pd
-from pysankey import sankey
 import matplotlib.pyplot as plt
 
+from pysankey import sankey
+
 df = pd.read_csv(
-        'pysankey/fruits.txt',
+        'pysankey/tests/fruits.txt',
         sep=' ', names=['true', 'predicted']
 )
 colorDict = {

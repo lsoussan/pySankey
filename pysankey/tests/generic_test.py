@@ -21,7 +21,8 @@ class TestFruit(GenericTest):
 
     def setUp(self):
         self.data = pd.read_csv(
-            "pysankey/fruits.txt", sep=" ", names=["true", "predicted"]
+            "pysankey/tests/fruits.txt", sep=" ",
+            names=["true", "predicted"]
         )
         self.colorDict = {
             "apple": "#f71b1b",
@@ -38,7 +39,7 @@ class TestCustomerGood(GenericTest):
 
     def setUp(self):
         self.data = pd.read_csv(
-            "pysankey/customers-goods.csv",
+            "pysankey/tests/customers-goods.csv",
             sep=",",
             names=["id", "customer", "good", "revenue"],
         )
