@@ -99,6 +99,9 @@ def sankey(
     Ouput:
         ax : matplotlib Axes
     """
+    if aspect <= 0:
+        raise ValueError("Aspect must be strictly superior to 0 (default is 4).")
+
     if ax is None:
         ax = plt.gca()
 
@@ -188,11 +191,11 @@ def sankey(
 
     # Determine positions of left label patches and total widths
     leftWidths, topEdge = _get_positions_and_total_widths(
-        dataFrame, leftLabels, 'left')
+        dataFrame, leftLabels, 'left', aspect)
 
     # Determine positions of right label patches and total widths
     rightWidths, topEdge = _get_positions_and_total_widths(
-        dataFrame, rightLabels, 'right')
+        dataFrame, rightLabels, 'right', aspect)
 
     # Total vertical extent of diagram
     xMax = topEdge / aspect
@@ -274,10 +277,9 @@ def sankey(
     return ax
 
 
-def _get_positions_and_total_widths(df, labels, side):
+def _get_positions_and_total_widths(df, labels, side, aspect):
     """ Determine positions of label patches and total widths"""
     widths = defaultdict()
-    topEdge = 1
     for i, label in enumerate(labels):
         labelWidths = {}
         labelWidths[side] = df[df[side] == label][side + "Weight"].sum()
@@ -286,7 +288,7 @@ def _get_positions_and_total_widths(df, labels, side):
             labelWidths["top"] = labelWidths[side]
         else:
             bottomWidth = widths[labels[i - 1]]["top"]
-            weightedSum = 0.02 * df[side + "Weight"].sum()
+            weightedSum = aspect / 200 * df[side + "Weight"].sum()
             labelWidths["bottom"] = bottomWidth + weightedSum
             labelWidths["top"] = labelWidths["bottom"] + labelWidths[side]
             topEdge = labelWidths["top"]

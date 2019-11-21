@@ -31,3 +31,10 @@ class TestErrorCase(TestFruit):
         """ sankey raises a NullsInFrame when left or right data is null"""
         with self.assertRaises(NullsInFrame):
             sankey([None], self.data['predicted'])
+
+    def test_wrong_aspect_value(self):
+        """ sankey raises a ValueError when aspect is set to a value <= 0"""
+        with self.assertRaises(ValueError):
+            sankey([], [], aspect=0)
+        with self.assertRaises(ValueError):
+            sankey([], [], aspect=-15)
