@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Produces simple Sankey Diagrams with matplotlib.
 @author: Anneya Golob & marcomanz & pierre-sassoulas & jorwoods
                       .-.
@@ -20,9 +20,6 @@ Produces simple Sankey Diagrams with matplotlib.
 import logging
 from collections import defaultdict
 
-import matplotlib
-matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -30,13 +27,10 @@ import seaborn as sns
 # fmt: on
 
 LOGGER = logging.getLogger(__name__)
-logging.basicConfig(level=logging.WARN)
 
 
 class PySankeyException(Exception):
     """ Generic PySankey Exception. """
-
-    pass
 
 
 class NullsInFrame(PySankeyException):
@@ -48,6 +42,9 @@ class LabelMismatch(PySankeyException):
 
 
 def check_data_matches_labels(labels, data, side):
+    """Check wether or not data matches labels.
+
+    Raise a LabelMismatch Exception if not."""
     if len(labels) > 0:
         if isinstance(data, list):
             data = set(data)
@@ -67,19 +64,17 @@ def check_data_matches_labels(labels, data, side):
 
 
 def sankey(
-    left,
-    right,
-    leftWeight=None,
-    rightWeight=None,
-    colorDict=None,
-    leftLabels=None,
-    rightLabels=None,
-    aspect=4,
-    rightColor=False,
-    fontsize=14,
-    figureName=None,
-    closePlot=False,
-    figSize=(6, 6),
+        left,
+        right,
+        leftWeight=None,
+        rightWeight=None,
+        colorDict=None,
+        leftLabels=None,
+        rightLabels=None,
+        aspect=4,
+        rightColor=False,
+        fontsize=14,
+        ax=None
 ):
     """
     Make Sankey Diagram showing flow from left-->right
@@ -100,11 +95,16 @@ def sankey(
         aspect = vertical extent of the diagram in units of horizontal extent
         rightColor = If true, each strip in the diagram will be be colored
                     according to its left label
-        figSize = tuple setting the width and height of the sankey diagram.
-            Defaults to (6, 6)
+        ax = optional, matplotlib axes to plot on, otherwise uses current axes.
     Ouput:
-        None
+        ax : matplotlib Axes
     """
+    if aspect <= 0:
+        raise ValueError("Aspect must be strictly superior to 0 (default is 4).")
+
+    if ax is None:
+        ax = plt.gca()
+
     if leftWeight is None:
         leftWeight = []
     if rightWeight is None:
@@ -120,10 +120,6 @@ def sankey(
     if len(rightWeight) == 0:
         rightWeight = leftWeight
 
-    plt.figure()
-    plt.rc("text", usetex=False)
-    plt.rc("font", family="serif")
-
     # Create Dataframe
     if isinstance(left, pd.Series):
         left = left.reset_index(drop=True)
@@ -136,7 +132,7 @@ def sankey(
             "leftWeight": leftWeight,
             "rightWeight": rightWeight,
         },
-        index=range(len(left)),
+        index=range(len(left))
     )
 
     if len(dataFrame[(dataFrame.left.isnull()) | (dataFrame.right.isnull())]):
@@ -146,7 +142,7 @@ def sankey(
     allLabels = pd.Series(
         np.r_[dataFrame.left.unique(), dataFrame.right.unique()]
     ).unique()
-    LOGGER.debug(f"Labels to handle : {allLabels}")
+    LOGGER.debug("Labels to handle : %s", allLabels)
 
     # Identify left labels
     if len(leftLabels) == 0:
@@ -159,6 +155,7 @@ def sankey(
         rightLabels = pd.Series(dataFrame.right.unique()).unique()
     else:
         check_data_matches_labels(rightLabels, dataFrame["right"], "right")
+
     # If no colorDict given, make one
     if colorDict is None:
         colorDict = {}
@@ -174,7 +171,8 @@ def sankey(
             )
             msg += "{}".format(", ".join(missing))
             raise ValueError(msg)
-    LOGGER.debug(f"The colordict value are : {colorDict}")
+    LOGGER.debug("The colordict value are : %s", colorDict)
+
     # Determine widths of individual strips
     ns_l = defaultdict()
     ns_r = defaultdict()
@@ -192,54 +190,26 @@ def sankey(
         ns_r[leftLabel] = rightDict
 
     # Determine positions of left label patches and total widths
-    leftWidths = defaultdict()
-    for i, leftLabel in enumerate(leftLabels):
-        myD = {}
-        myD["left"] = dataFrame[dataFrame.left == leftLabel].leftWeight.sum()
-        if i == 0:
-            myD["bottom"] = 0
-            myD["top"] = myD["left"]
-        else:
-            myD["bottom"] = (
-                leftWidths[leftLabels[i - 1]]["top"] + 0.02 * dataFrame.leftWeight.sum()
-            )
-            myD["top"] = myD["bottom"] + myD["left"]
-            topEdge = myD["top"]
-        leftWidths[leftLabel] = myD
-        LOGGER.debug(f"Left position of '{leftLabel}' : {myD} ")
+    leftWidths, topEdge = _get_positions_and_total_widths(
+        dataFrame, leftLabels, 'left', aspect)
 
     # Determine positions of right label patches and total widths
-    rightWidths = defaultdict()
-    for i, rightLabel in enumerate(rightLabels):
-        LOGGER.debug(f"Handling {i}: {rightLabel}")
-        myD = {}
-        myD["right"] = dataFrame[dataFrame.right == rightLabel].rightWeight.sum()
-        if i == 0:
-            myD["bottom"] = 0
-            myD["top"] = myD["right"]
-        else:
-            bottomWidth = rightWidths[rightLabels[i - 1]]["top"]
-            # LOGGER.debug(f"Calculating weightedSum for '{rightLabel}' from {dataFrame.rightWeight}")
-            weightedSum = 0.02 * dataFrame.rightWeight.sum()
-            # LOGGER.debug(f"weightedSum = '{weightedSum}'")
-            myD["bottom"] = bottomWidth + weightedSum
-            myD["top"] = myD["bottom"] + myD["right"]
-            topEdge = myD["top"]
-        rightWidths[rightLabel] = myD
-        LOGGER.debug(f"Right position of '{rightLabel}' : {myD} ")
+    rightWidths, topEdge = _get_positions_and_total_widths(
+        dataFrame, rightLabels, 'right', aspect)
+
     # Total vertical extent of diagram
     xMax = topEdge / aspect
 
     # Draw vertical bars on left and right of each  label's section & print label
     for leftLabel in leftLabels:
-        plt.fill_between(
+        ax.fill_between(
             [-0.02 * xMax, 0],
             2 * [leftWidths[leftLabel]["bottom"]],
             2 * [leftWidths[leftLabel]["bottom"] + leftWidths[leftLabel]["left"]],
             color=colorDict[leftLabel],
             alpha=0.99,
         )
-        plt.text(
+        ax.text(
             -0.05 * xMax,
             leftWidths[leftLabel]["bottom"] + 0.5 * leftWidths[leftLabel]["left"],
             leftLabel,
@@ -247,14 +217,14 @@ def sankey(
             fontsize=fontsize,
         )
     for rightLabel in rightLabels:
-        plt.fill_between(
+        ax.fill_between(
             [xMax, 1.02 * xMax],
             2 * [rightWidths[rightLabel]["bottom"]],
             2 * [rightWidths[rightLabel]["bottom"] + rightWidths[rightLabel]["right"]],
             color=colorDict[rightLabel],
             alpha=0.99,
         )
-        plt.text(
+        ax.text(
             1.05 * xMax,
             rightWidths[rightLabel]["bottom"] + 0.5 * rightWidths[rightLabel]["right"],
             rightLabel,
@@ -295,18 +265,34 @@ def sankey(
                 # Update bottom edges at each label so next strip starts at the right place
                 leftWidths[leftLabel]["bottom"] += ns_l[leftLabel][rightLabel]
                 rightWidths[rightLabel]["bottom"] += ns_r[leftLabel][rightLabel]
-                plt.fill_between(
+                ax.fill_between(
                     np.linspace(0, xMax, len(ys_d)),
                     ys_d,
                     ys_u,
                     alpha=0.65,
                     color=colorDict[labelColor],
                 )
-    plt.gca().axis("off")
-    plt.gcf().set_size_inches(figSize)
-    if figureName != None:
-        fileName = "{}.png".format(figureName)
-        plt.savefig(fileName, bbox_inches="tight", dpi=150)
-        LOGGER.info(f"Sankey diagram generated in '{fileName}'")
-    if closePlot:
-        plt.close()
+    ax.axis("off")
+
+    return ax
+
+
+def _get_positions_and_total_widths(df, labels, side, aspect):
+    """ Determine positions of label patches and total widths"""
+    widths = defaultdict()
+    for i, label in enumerate(labels):
+        labelWidths = {}
+        labelWidths[side] = df[df[side] == label][side + "Weight"].sum()
+        if i == 0:
+            labelWidths["bottom"] = 0
+            labelWidths["top"] = labelWidths[side]
+        else:
+            bottomWidth = widths[labels[i - 1]]["top"]
+            weightedSum = aspect / 200 * df[side + "Weight"].sum()
+            labelWidths["bottom"] = bottomWidth + weightedSum
+            labelWidths["top"] = labelWidths["bottom"] + labelWidths[side]
+            topEdge = labelWidths["top"]
+        widths[label] = labelWidths
+        LOGGER.debug("%s position of '%s' : %s", side, label, labelWidths)
+
+    return widths, topEdge

@@ -1,23 +1,26 @@
-# pySankey
+# pySankey2
 
 Uses matplotlib to create simple <a href="https://en.wikipedia.org/wiki/Sankey_diagram">
-Sankey diagrams</a> flowing only from left to right.
+Sankey diagrams</a> flowing from left to right.
 
-[![PyPI version](https://badge.fury.io/py/pySankeyBeta.svg)](https://badge.fury.io/py/pySankeyBeta)
-[![Build Status](https://travis-ci.org/Pierre-Sassoulas/pySankey.svg?branch=master)](https://travis-ci.org/Pierre-Sassoulas/pySankey)
-[![Coverage Status](https://coveralls.io/repos/github/Pierre-Sassoulas/pySankey/badge.svg?branch=master)](https://coveralls.io/github/Pierre-Sassoulas/pySankey?branch=master)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+A fork of a fork of [pySankey](https://github.com/anazalea/pySankey).
+
+[![PyPI version](https://badge.fury.io/py/pySankey2.svg)](https://badge.fury.io/py/pySankey2)
+[![Build Status](https://travis-ci.org/vgalisson/pySankey.svg?branch=master)](https://travis-ci.org/vgalisson/pySankey)
+[![Coverage Status](https://coveralls.io/repos/github/vgalisson/pySankey/badge.svg?branch=master)](https://coveralls.io/github/vgalisson/pySankey?branch=master)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Requirements
 
-Requires python-tk (for python 2.7) or python3-tk (for python 3.x) you can
-install the other requirements with:
+Requires python-tk (for python 2.7) or python3-tk (for python 3.x) install with `apt-get` or your package manager.
+
+You can install the other requirements with:
 
 ``` bash
     pip install -r requirements.txt
 ```
 
-## Example
+## Examples
 
 With fruits.txt :
 
@@ -81,15 +84,16 @@ With fruits.txt :
 <p>1000 rows × 2 columns</p>
 </div>
 
-You can generate a sankey's diagram with this code:
+You can generate a sankey's diagram with this code (`colorDict` is optional):
 
 ```python
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from pysankey import sankey
 
-pd.options.display.max_rows = 8
 df = pd.read_csv(
-    'pysankey/fruits.txt', sep=' ', names=['true', 'predicted']
+    'pysankey/tests/fruits.txt', sep=' ', names=['true', 'predicted']
 )
 colorDict = {
     'apple':'#f71b1b',
@@ -99,18 +103,21 @@ colorDict = {
     'orange':'#f78c1b',
     'kiwi':'#9BD937'
 }
-sankey(
+
+ax = sankey(
     df['true'], df['predicted'], aspect=20, colorDict=colorDict,
     leftLabels=['banana','orange','blueberry','apple','lime'],
     rightLabels=['orange','banana','blueberry','apple','lime','kiwi'],
-    fontsize=12, figureName="fruit"
+    fontsize=12
 )
-# Result is in "fruit.png"
+
+plt.show() # to display
+plt.savefig('fruit.png', bbox_inches='tight') # to save
 ```
 
-![Fruity Alchemy](pysankey/fruit.png)
+![Fruity Alchemy](examples/fruit.png)
 
-You could also use weight:
+With customer-goods.csv :
 
 ```
 ,customer,good,revenue
@@ -126,24 +133,87 @@ You could also use weight:
 9,John,meat,13.0
 ```
 
+You could also weight:
+
 ```python
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from pysankey import sankey
 
 df = pd.read_csv(
-    'pysankey/customers-goods.csv', sep=',',
+    'pysankey/tests/customers-goods.csv', sep=',',
     names=['id', 'customer', 'good', 'revenue']
 )
 weight = df['revenue'].values[1:].astype(float)
-sankey(
-    left=df['customer'].values[1:], right=df['good'].values[1:],
-    rightWeight=weight, leftWeight=weight, aspect=20, fontsize=20,
-    figureName="customer-good"
+
+ax = sankey(
+      left=df['customer'].values[1:], right=df['good'].values[1:],
+      rightWeight=weight, leftWeight=weight, aspect=20, fontsize=20
 )
-# Result is in "customer-good.png"
+
+plt.show() # to display
+plt.savefig('customers-goods.png', bbox_inches='tight') # to save
 ```
 
-![Customer goods](pysankey/customers-goods.png)
+![Customer goods](examples/customers-goods.png)
+
+Similar to seaborn, you can pass a matplotlib `Axes` to `sankey` function with the keyword `ax=`:
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from pysankey import sankey
+
+df = pd.read_csv(
+        'pysankey/tests/fruits.txt',
+        sep=' ', names=['true', 'predicted']
+)
+colorDict = {
+    'apple': '#f71b1b',
+    'blueberry': '#1b7ef7',
+    'banana': '#f3f71b',
+    'lime': '#12e23f',
+    'orange': '#f78c1b'
+}
+
+ax1 = plt.axes()
+
+ax1 = sankey(
+      df['true'], df['predicted'], aspect=20, colorDict=colorDict,
+      fontsize=12, ax=ax1
+)
+
+plt.show()
+```
+
+## Important informations
+
+Use of `figureName`, `closePlot` and `figSize` in `sankey()` has been removed.
+This is done so matplotlib is used more transparently as this [issue] suggested (https://github.com/anazalea/pySankey/issues/26#issue-429312025) on the original github repo.
+
+Now, `sankey()` does less of the customization and let the user do it to their liking by returning a matplotlib `Axes` object, which mean the user also has access to the `Figure` to customise.
+Then they can choose what to do with it - showing it, saving it with much more flexibility.
+
+### Recommended changes to your code from pySankey
+ - To save a figure, after `sankey()`, one can simply do:
+  ```python
+    plt.savefig("<figureName>.png", bbox_inches="tight", dpi=150)
+  ```
+
+ - To display the diagram, simply do `plt.show()` after `sankey()`.
+
+- You can modify the sankey size by changing the one from the matplotlib figure.
+  ```python
+    plt.gcf().set_size_inches(figSize)
+  ```
+
+- It is possible to modify the diagram font looks, for example, add the following lines before calling `sankey()` :
+  ```python
+    plt.rc("text", usetex=False)
+    plt.rc("font", family="serif")
+  ```
 
 ## Package development
 
