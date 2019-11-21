@@ -8,15 +8,15 @@ with open("requirements.txt", "r", encoding="UTF-8") as fh:
 require = [x.strip() for x in require]
 
 setuptools.setup(
-    name="pySankeyBeta",
-    version="1.0.7",
-    author="pierre-sassoulas",
-    author_email="pierre.sassoulas@gmail.com",
-    description="Make simple, pretty Sankey Diagrams (Beta version)",
+    name="pySankey2",
+    version="2.0.0",
+    author="victor-galisson",
+    author_email="victor.galisson@gmail.com",
+    description="Make simple, pretty Sankey Diagrams as a matplotlib object",
     long_description=long_description,
     license="GNU General Public License v3.0",
     long_description_content_type="text/markdown",
-    url="https://github.com/pierre-sassoulas/pySankey",
+    url="https://github.com/vgalisson/pySankey",
     packages=setuptools.find_packages(),
     install_requires=require,
     classifiers=(
