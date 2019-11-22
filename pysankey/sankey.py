@@ -17,7 +17,6 @@ Produces simple Sankey Diagrams with matplotlib.
 """
 
 # fmt: off
-import warnings
 import logging
 from collections import defaultdict
 
@@ -75,9 +74,6 @@ def sankey(
         aspect=4,
         rightColor=False,
         fontsize=14,
-        figureName=None,
-        closePlot=False,
-        figSize=None,
         ax=None
 ):
     """
@@ -99,31 +95,12 @@ def sankey(
         aspect = vertical extent of the diagram in units of horizontal extent
         rightColor = If true, each strip in the diagram will be be colored
                     according to its left label
-        figSize = tuple setting the width and height of the sankey diagram.
-            Defaults to current figure size
         ax = optional, matplotlib axes to plot on, otherwise uses current axes.
     Ouput:
         ax : matplotlib Axes
     """
-    warn = []
-    if figureName is not None:
-        msg = "use of figureName in sankey() is deprecated"
-        warnings.warn(msg, DeprecationWarning)
-        warn.append(msg[7:-14])
-    if closePlot is not False:
-        msg = "use of closePlot in sankey() is deprecated"
-        warnings.warn(msg, DeprecationWarning)
-        warn.append(msg[7:-14])
-    if figSize is not None:
-        msg = "use of figSize in sankey() is deprecated"
-        warnings.warn(msg, DeprecationWarning)
-        warn.append(msg[7:-14])
-
-    if warn:
-        LOGGER.warning(
-            " The following arguments are deprecated and should be removed: %s",
-            ", ".join(warn)
-        )
+    if aspect <= 0:
+        raise ValueError("Aspect must be strictly superior to 0 (default is 4).")
 
     if ax is None:
         ax = plt.gca()
@@ -142,9 +119,6 @@ def sankey(
 
     if len(rightWeight) == 0:
         rightWeight = leftWeight
-
-    plt.rc("text", usetex=False)
-    plt.rc("font", family="serif")
 
     # Create Dataframe
     if isinstance(left, pd.Series):
@@ -217,11 +191,11 @@ def sankey(
 
     # Determine positions of left label patches and total widths
     leftWidths, topEdge = _get_positions_and_total_widths(
-        dataFrame, leftLabels, 'left')
+        dataFrame, leftLabels, 'left', aspect)
 
     # Determine positions of right label patches and total widths
     rightWidths, topEdge = _get_positions_and_total_widths(
-        dataFrame, rightLabels, 'right')
+        dataFrame, rightLabels, 'right', aspect)
 
     # Total vertical extent of diagram
     xMax = topEdge / aspect
@@ -300,20 +274,10 @@ def sankey(
                 )
     ax.axis("off")
 
-    if figSize is not None:
-        plt.gcf().set_size_inches(figSize)
-
-    if figureName is not None:
-        fileName = "{}.png".format(figureName)
-        plt.savefig(fileName, bbox_inches="tight", dpi=150)
-        LOGGER.info("Sankey diagram generated in '%s'", fileName)
-    if closePlot:
-        plt.close()
-
     return ax
 
 
-def _get_positions_and_total_widths(df, labels, side):
+def _get_positions_and_total_widths(df, labels, side, aspect):
     """ Determine positions of label patches and total widths"""
     widths = defaultdict()
     for i, label in enumerate(labels):
@@ -324,7 +288,7 @@ def _get_positions_and_total_widths(df, labels, side):
             labelWidths["top"] = labelWidths[side]
         else:
             bottomWidth = widths[labels[i - 1]]["top"]
-            weightedSum = 0.02 * df[side + "Weight"].sum()
+            weightedSum = aspect / 200 * df[side + "Weight"].sum()
             labelWidths["bottom"] = bottomWidth + weightedSum
             labelWidths["top"] = labelWidths["bottom"] + labelWidths[side]
             topEdge = labelWidths["top"]
