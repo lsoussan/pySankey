@@ -3,7 +3,7 @@
 Uses matplotlib to create simple <a href="https://en.wikipedia.org/wiki/Sankey_diagram">
 Sankey diagrams</a> flowing from left to right.
 
-A fork of a fork of [pySankey](https://github.com/anazalea/pySankey).
+A fork of a [fork](https://github.com/Pierre-Sassoulas/pySankey) of [pySankey](https://github.com/anazalea/pySankey).
 
 [![PyPI version](https://badge.fury.io/py/pySankey2.svg)](https://badge.fury.io/py/pySankey2)
 [![Build Status](https://travis-ci.org/vgalisson/pySankey.svg?branch=master)](https://travis-ci.org/vgalisson/pySankey)
@@ -191,7 +191,7 @@ plt.show()
 ## Important informations
 
 Use of `figureName`, `closePlot` and `figSize` in `sankey()` has been removed.
-This is done so matplotlib is used more transparently as this [issue] suggested (https://github.com/anazalea/pySankey/issues/26#issue-429312025) on the original github repo.
+This is done so matplotlib is used more transparently as this [issue](https://github.com/anazalea/pySankey/issues/26#issue-429312025) suggested  on the original github repo.
 
 Now, `sankey()` does less of the customization and let the user do it to their liking by returning a matplotlib `Axes` object, which mean the user also has access to the `Figure` to customise.
 Then they can choose what to do with it - showing it, saving it with much more flexibility.
